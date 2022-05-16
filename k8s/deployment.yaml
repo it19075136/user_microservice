@@ -9,6 +9,6 @@ metadata:
 spec:
   containers:
     - name: server-pod-userservice
-      image: avan4457/shopping-app
+      image: avan4457/cluster-1
       ports:
         - containerPort: 5000
