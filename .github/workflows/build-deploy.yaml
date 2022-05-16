@@ -1,31 +1,43 @@
-name: Docker Image CI
+name: Deploy Docker
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  USERNAME: ${{secrets.USERNAME}}
+  PASSWORD: ${{secrets.PASSWORD}}
+  CLUSTER: ${{secrets.CLUSTER}}
 
 jobs:
-
-  build:
-
+  docker-service:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Login to Docker Hub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-    - name: Build and push
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile
-        push: true
-        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/user-microservice:${{ github.sha }}
-    - uses: actions-hub/kubectl@master
-      env:
-        KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-      with:
-        args: get namespaces
+      - uses: actions/checkout@v2
+      - name: Work Dir
+        run: |
+          echo $USERNAME
+          echo $PASSWORD
+          echo $CLUSTER
+      - name: Docker login
+        run: |
+          docker login -u $USERNAME -p $PASSWORD
+      - name: Build product service docker image
+        run: docker build . --file Dockerfile -t "$USERNAME/$CLUSTER:latest"
+      - name: Push product service docker image
+        run: docker push "$USERNAME/$CLUSTER:latest"
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: kubectl - Google Cloud GKE cluster.
+        uses: ameydev/gke-kubectl-action@master
+        env:
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}
+          APPLICATION_CREDENTIALS: ${{ secrets.CREDENTIALS }}
+          CLUSTER_NAME: ${{ secrets.CLUSTER }}
+          ZONE_NAME: us-central1-c
+        with:
+          args: apply -f k8s/
