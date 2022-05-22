@@ -23,9 +23,9 @@ jobs:
       - name: Docker login
         run: |
           docker login -u $USERNAME -p $PASSWORD
-      - name: Build product service docker image
+      - name: Build user service docker image
         run: docker build . --file Dockerfile -t "$USERNAME/$CLUSTER:latest"
-      - name: Push product service docker image
+      - name: Push user service docker image
         run: docker push "$USERNAME/$CLUSTER:latest"
 
   docker-build:
